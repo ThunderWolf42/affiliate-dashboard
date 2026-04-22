@@ -13,7 +13,7 @@ class AffiliateStats extends BaseWidget
 
         return [
             Stat::make(
-                'Total Teman Diajak',
+                'Total Teman yang Diajak',
                 \App\Models\Lead::where('user_id', $user->id)->count()
             )
                 ->description('Berdasarkan klik link affiliate')

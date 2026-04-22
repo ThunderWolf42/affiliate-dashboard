@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <div class="flex flex-col gap-y-3">
-            <h2 class="text-lg font-bold">🚀 Siap Ajak Teman/Saudara ?</h2>
+            <h2 class="text-lg font-bold">🚀 Siap Ajak Teman/Saudara ke UKRIDA?</h2>
             <p class="text-gray-500">Gunakan link di bawah ini untuk mendaftarkan teman kamu ke UKRIDA:</p>
             <div class="flex items-center gap-x-2">
                 <x-filament::input.wrapper class="flex-1">
