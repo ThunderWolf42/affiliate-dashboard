@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Lead;
 use App\Models\User;
 
 use Illuminate\Http\Request;
@@ -15,22 +16,26 @@ class AffiliateJoinController extends Controller
         return view('affiliate-join', compact('affiliate'));
     }
 
-    public function store (Request $request)
+
+
+    public function store(Request $request)
     {
+        // Validasi harus diisi agar tidak error SQL saat create
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'affiliate_code' => 'required|exists:users,affiliate_code',
+            'affiliate_id' => 'required|exists:users,id',
+            'lead_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'wa_number' => 'required|string|max:15', // Gunakan string agar tidak kena limit angka matematika
         ]);
 
-        
-        // Cari affiliate berdasarkan kode
+        Lead::create([
+            'user_id' => $request->input('affiliate_id'),
+            'lead_name' => $request->input('lead_name'), // Sesuaikan dengan key di validate
+            'email' => $request->input('email'),
+            'wa_number' => $request->input('wa_number'),
+            'status' => 'pending',
+        ]);
 
-        $affiliate = User::where('affiliate_code', $request->affiliate_code)->firstOrFail();
-
-        // Simpan data join (misalnya di tabel terpisah atau log)
-        // Contoh: AffiliateJoin::create([...]);
-
-        return redirect()->back()->with('success', 'Anda berhasil bergabung melalui kode affiliate!');
+        return redirect()->away('https://register.ukrida.ac.id/admisi/public/register/register/registerEmail');
     }
 }

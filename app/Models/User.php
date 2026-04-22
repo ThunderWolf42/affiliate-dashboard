@@ -41,6 +41,14 @@ class User extends Authenticatable
         return $this->belongsTo(UAA_Mahasiswa::class, 'nim', 'nim');
     }
 
+    public function syncAllLeads()
+    {
+        // Ambil semua leads milik dia yang belum punya nomor registrasi
+        $this->leads()->whereNull('no_registrasi')->get()->each(function ($lead) {
+            $lead->findMatchInAdmisi();
+        });
+    }
+
     /**
      * Get the attributes that should be cast.
      *

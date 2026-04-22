@@ -31,7 +31,9 @@ class RefTahapanResource extends Resource
     {
         return $table
             ->columns([
-                //
+                Tables\Columns\TextColumn::make('step_number')->sortable(),
+                Tables\Columns\TextColumn::make('step_name'),
+                Tables\Columns\TextColumn::make('sla_days')->label('SLA (Hari)'),
             ])
             ->filters([
                 //
