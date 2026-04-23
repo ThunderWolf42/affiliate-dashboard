@@ -16,11 +16,12 @@ class Lead extends Model
         'lead_name',
         'email',
         'wa_number',
+        'jurusan_id', // WAJIB ADA AGAR BISA DISIMPAN
         'status',
     ];
 
     /**
-     * RELASI: Lead ini milik siapa (Affiliate/Mahasiswa mana?)
+     * RELASI: Ke Affiliate (User)
      */
     public function user(): BelongsTo
     {
@@ -28,8 +29,16 @@ class Lead extends Model
     }
 
     /**
-     * RELASI: Menghubungkan Lead ke data pendaftaran asli di Admisi
-     * Kita hubungkan lewat no_registrasi
+     * RELASI: Ke Master Jurusan
+     */
+    public function jurusan(): BelongsTo
+    {
+        // Sesuaikan nama Class Model Jurusan kamu (Ref_Jurusan atau Jurusan)
+        return $this->belongsTo(Ref_Jurusan::class, 'jurusan_id');
+    }
+
+    /**
+     * RELASI: Ke Data Pendaftaran Admisi
      */
     public function admisiRegistration(): BelongsTo
     {
@@ -37,46 +46,28 @@ class Lead extends Model
     }
 
     /**
-     * LOGIC MATCHING: Fungsi untuk mencari kecocokan data di tabel Admisi
-     * Ini yang kamu pakai untuk Triple Matching (Nama, Email, atau HP)
+     * BOOTED: Otomatis mencari kecocokan saat data Lead diakses
      */
-
-
     protected static function booted()
     {
-        // Setiap kali data lead diambil dari database, sistem langsung ngecek matching
         static::retrieved(function ($lead) {
-            if (!$lead->no_registrasi) {
+            // Hanya jalankan logic jika no_registrasi masih kosong
+            if (is_null($lead->no_registrasi)) {
                 $match = \App\Models\Admisi_Registration::where('email', $lead->email)
                     ->orWhere('no_hp', $lead->wa_number)
                     ->orWhere('nama_calon', $lead->lead_name)
                     ->first();
 
                 if ($match) {
+                    // Update field
                     $lead->no_registrasi = $match->no_registrasi;
+                    $lead->jurusan_id = $match->jurusan_id;
                     $lead->status = 'active';
-                    $lead->saveQuietly(); // Simpan diam-diam
+
+                    // saveQuietly agar tidak memicu event 'updated' atau 'retrieved' berulang kali
+                    $lead->saveQuietly();
                 }
             }
         });
     }
-    // public static function findMatchInAdmisi booted()
-    // {
-    //     // 1. Ambil data calon mahasiswa dari tabel Admisi yang cocok
-    //     // Berdasarkan Email ATAU No HP ATAU Nama yang sama dengan data di model Lead ini
-    //     $match = Admisi_Registration::where('email', $this->email)
-    //         ->orWhere('no_hp', $this->wa_number)
-    //         ->orWhere('nama_calon', $this->lead_name)
-    //         ->first();
-
-    //     // 2. Jika ditemukan kecocokan di database Admisi
-    //     if ($match) {
-    //         // 3. Update data di tabel Leads milik si Affiliate ini
-    //         $this->update([
-    //             'no_registrasi' => Lead::where('id', $this->id)->value('no_registrasi') ?? $match->no_registrasi, // Update no_registrasi jika belum ada
-    //             'status'        => 'active' // Ubah jadi aktif karena sudah terdeteksi di admisi
-    //         ]);
-    //     }
-    // }
-
 }

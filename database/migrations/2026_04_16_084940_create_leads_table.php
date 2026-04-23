@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('lead_name');
             $table->string('email')->nullable();
             $table->string('wa_number');
+            $table->foreignId('jurusan_id')->nullable()->constrained('ref_jurusans');
             $table->string('no_registrasi')->nullable(); // Hilangkan unique, buat nullable
             $table->enum('status', ['pending', 'active', 'stalled', 'out'])->default('pending');
             $table->timestamps();

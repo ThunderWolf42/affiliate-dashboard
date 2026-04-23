@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class RefTahapan extends Model
 {
 
-    // Beritahu Laravel bahwa PK-nya bukan 'id'
+    // pk nya si step number
     protected $primaryKey = 'step_number';
 
     // Jika PK kamu bukan auto-increment (karena kamu input manual 1, 2, 3)
-    public $incrementing = false;
+    // public $incrementing = false;
 
-    // Jika PK-nya bertipe integer
+    
     protected $keyType = 'int';
     protected $table = 'ref_tahapans';
 

@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('nama_calon');
             $table->string('email');
             $table->string('no_hp');
+            $table->foreignId('jurusan_id')->constrained('ref_jurusans');
             $table->timestamp('step_start_at')->useCurrent();// catat kapan tahap nya dimulai
             $table->timestamp('last_update_at')->useCurrent();
             $table->timestamps();

@@ -15,6 +15,7 @@ class AdmisiRegistrasiSeeder extends Seeder
                 'nama_calon' => 'Budi Santoso',
                 'email' => 'budi.santoso@example.com',
                 'no_hp' => '081234567890',
+                'jurusan_id' => 1, // Informatika
                 'current_step' => 2, // Misal: Upload Berkas
                 'step_start_at' => now()->subDays(5), // Sudah 5 hari di tahap ini
                 'last_update_at' => now(),
@@ -26,6 +27,7 @@ class AdmisiRegistrasiSeeder extends Seeder
                 'nama_calon' => 'Siti Aminah',
                 'email' => 'siti.amina@gmail.com',
                 'no_hp' => '085711223344',
+                'jurusan_id' => 5,
                 'current_step' => 6, // SUDAH STEP 6 (Potensi Reward Cair!)
                 'step_start_at' => now()->subDays(1),
                 'last_update_at' => now(),
@@ -37,6 +39,7 @@ class AdmisiRegistrasiSeeder extends Seeder
                 'nama_calon' => 'Andi Wijaya',
                 'email' => 'andi.w@outlook.com',
                 'no_hp' => '089988776655',
+                'jurusan_id' => 3,
                 'current_step' => 1, // Baru Isi Formulir
                 'step_start_at' => now(),
                 'last_update_at' => now(),

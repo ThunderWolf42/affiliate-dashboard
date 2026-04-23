@@ -28,11 +28,24 @@ class AffiliateStats extends BaseWidget
                 ->color('success'),
 
             Stat::make(
-                'Saldo Deposit UAA',
+                'Reward Terkumpul',
                 'Rp ' . number_format($user->u_a_a_mahasiswa?->deposit_balance ?? 0, 0, ',', '.')
-            )
-                ->description('Reward otomatis bayar semesteran')
-                ->color('warning'),
+            ),
+
+            // Stat::make(
+            //     'Potential Reward',
+            //     'Rp ' . number_format(
+            //         \App\Models\Lead::where('user_id', $user->id)
+            //             ->whereNull('no_registrasi')
+            //             ->join('ref_jurusans', 'leads.jurusan_id', '=', 'ref_jurusans.id')
+            //             ->sum('ref_jurusans.reward_amount'),
+            //         0,
+            //         ',',
+            //         '.'
+            //     )
+            // )
+            //     ->description('Reward otomatis bayar semesteran')
+            //     ->color('warning'),
         ];
     }
 }
