@@ -18,6 +18,7 @@ class Lead extends Model
         'wa_number',
         'jurusan_id', // WAJIB ADA AGAR BISA DISIMPAN
         'status',
+        'telegram_chat_id', // Tambahkan field ini untuk menyimpan chat_id Telegram
     ];
 
     /**

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\LeadResource\Pages;
 use App\Filament\Resources\LeadResource\RelationManagers;
+use Carbon\CarbonInterface;
 use App\Models\Lead;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -12,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+
 
 class LeadResource extends Resource
 {
@@ -45,24 +47,60 @@ class LeadResource extends Resource
                 Tables\Columns\TextColumn::make('admisiRegistration.refTahapan.step_name')
                     ->label('Tahapan Saat Ini')
                     ->placeholder('Pending (Belum Daftar)')
-                    ->description(fn($record) => $record->no_registrasi ? 'Progres Resmi UKRIDA' : null),
+                    ->description(fn($record) => $record->no_registrasi ? 'Progres Pendaftaran ' : null),
 
-                // Kolom Urgensi (SLA)
+                Tables\Columns\TextColumn::make('admisiRegistration.current_step')
+                    ->searchable()
+                    ->alignCenter()
+                    ->label('Tahap'),
+
                 Tables\Columns\TextColumn::make('urgency')
-                    ->label('Urgensi')
+                    ->label('Status Urgensi')
                     ->getStateUsing(function ($record) {
-                        if (!$record->admisiRegistration || !$record->admisiRegistration->refTahapan) {
-                            return 'Normal';
+                        // 1. Cek apakah sudah match dengan data admisi
+                        $admisi = $record->admisiRegistration;
+                        if (!$admisi || !$admisi->refTahapan) {
+                            return 'Menunggu Registrasi';
                         }
 
-                        $start = \Carbon\Carbon::parse($record->admisiRegistration->step_start_at);
-                        $days = $start->diffInDays(now());
-                        $sla = $record->admisiRegistration->refTahapan->sla_days;
+                        // 2. Ambil data SLA & Waktu Mulai Tahap
+                        $tglMulaiTahap = \Carbon\Carbon::parse($admisi->step_start_at);
+                        $batasHari = $admisi->refTahapan->sla_days;
 
-                        return $days > $sla ? 'High Priority (Stalled)' : 'Normal';
+                        // 3. Hitung Deadline (Tgl Mulai + SLA hari)
+                        $deadline = $tglMulaiTahap->copy()->addDays($batasHari);
+
+                        // 4. Cek apakah sekarang sudah lewat deadline?
+                        if (now()->greaterThan($deadline)) {
+                            $telat = ($deadline->diffInDays());
+                            return "High Priority (Telat {$telat} Hari)";
+                        }
+
+                        // 5. Jika belum lewat, tampilkan sisa waktu
+                        return "Normal (Sisa " . now()->diffInHumans($deadline, [
+                            'syntax' =>  CarbonInterface::DIFF_RELATIVE_TO_NOW,
+                            'parts' => 1,
+                        ]) . ")";
                     })
                     ->badge()
-                    ->color(fn($state) => $state === 'High Priority (Stalled)' ? 'danger' : 'success'),
+                    ->color(fn($state) => str_contains($state, 'High') ? 'danger' : 'success'),
+
+                // Kolom Urgensi (SLA)
+                // Tables\Columns\TextColumn::make('urgency')
+                //     ->label('Urgensi')
+                //     ->getStateUsing(function ($record) {
+                //         if (!$record->admisiRegistration || !$record->admisiRegistration->refTahapan) {
+                //             return 'Normal';
+                //         }
+
+                //         $start = \Carbon\Carbon::parse($record->admisiRegistration->step_start_at);
+                //         $days = $start->diffInDays(now());
+                //         $sla = $record->admisiRegistration->refTahapan->sla_days;
+
+                //         return $days > $sla ? 'High Priority (Stalled)' : 'Normal';
+                //     })
+                //     ->badge()
+                //     ->color(fn($state) => $state === 'High Priority (Stalled)' ? 'danger' : 'success'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
