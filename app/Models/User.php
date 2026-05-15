@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\UAA_Mahasiswa;
+
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -60,5 +61,28 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function receivesBroadcastNotificationsOn(): string
+    {
+        // Ini adalah 'alamat' channel tempat browser admin mendengarkan notif
+        return 'App.Models.User.' . $this->id;
+    }
+
+    public function leads()
+    {
+        return $this->hasMany(\App\Models\Lead::class, 'user_id');
+    }
+    public function getTotalRewardAttribute()
+    {
+        return $this->leads()
+            ->whereHas('admisiRegistration.refTahapan', function ($query) {
+                // Sesuai screenshot terakhirmu, nama kolomnya adalah step_number
+                // Dan kita mau ambil tahap ke-6
+                $query->where('ref_tahapans.step_number', 6);
+            })
+            // Sesuai screenshot table leads, nama kolomnya adalah jurusan_id
+            ->join('ref_jurusans', 'leads.jurusan_id', '=', 'ref_jurusans.id')
+            ->sum('ref_jurusans.reward_amount');
     }
 }

@@ -46,6 +46,7 @@ class Lead extends Model
         return $this->belongsTo(Admisi_Registration::class, 'no_registrasi', 'no_registrasi');
     }
 
+    
     /**
      * BOOTED: Otomatis mencari kecocokan saat data Lead diakses
      */

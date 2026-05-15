@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Filament\Resources\LeadResource\RelationManagers;
 use Carbon\CarbonInterface;
+use Carbon\Constants\DiffOptions;
 use App\Models\Lead;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -77,8 +78,8 @@ class LeadResource extends Resource
                         }
 
                         // 5. Jika belum lewat, tampilkan sisa waktu
-                        return "Normal (Sisa " . now()->diffInHumans($deadline, [
-                            'syntax' =>  CarbonInterface::DIFF_RELATIVE_TO_NOW,
+                        return "Normal (Sisa " . $deadline->diffForHumans(now(), [
+                            'syntax' => CarbonInterface::DIFF_RELATIVE_TO_NOW,
                             'parts' => 1,
                         ]) . ")";
                     })

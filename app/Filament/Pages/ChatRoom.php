@@ -14,6 +14,7 @@ class ChatRoom extends Page
 
     public $activeLeadId = null;
     public $newMessage = '';
+    public $showChatDetail = false;
 
     public function getLeads()
     {
@@ -24,6 +25,7 @@ class ChatRoom extends Page
     public function selectLead($leadId)
     {
         $this->activeLeadId = $leadId;
+        $this->showChatDetail = true;
     }
 
     //fungsi buat kirim pesan dari admin ke calon mahasiswa
@@ -58,6 +60,12 @@ class ChatRoom extends Page
         return ChatMessage::where('lead_id', $this->activeLeadId)
             ->orderBy('created_at')
             ->get();
+    }
+
+    public function backToList()
+    {
+        $this->showChatDetail = false;
+        $this->activeLeadId = null;
     }
 }
 

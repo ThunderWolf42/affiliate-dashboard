@@ -27,10 +27,15 @@ class AffiliateStats extends BaseWidget
                 ->description('Sudah masuk sistem admisi')
                 ->color('success'),
 
-            Stat::make(
-                'Reward Terkumpul',
-                'Rp ' . number_format($user->u_a_a_mahasiswa?->deposit_balance ?? 0, 0, ',', '.')
-            ),
+            Stat::make('Reward Terkumpul', function () use ($user) {
+                // Memanggil accessor 'total_reward' yang dinamis
+                $amount = $user->total_reward ?? 0;
+
+                return 'Rp ' . number_format($amount, 0, ',', '.');
+            })
+                ->description('Komisi dari pendaftar yang lunas Pembayaran Uang Pangkal')
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color('success'),
 
             // Stat::make(
             //     'Potential Reward',

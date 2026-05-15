@@ -55,4 +55,5 @@ class AdmisiRegistrasiSeeder extends Seeder
             );
         }
     }
+    //https://api.telegram.org/bot8783859456:AAHUNfcL5Eyi24Xv-N5ZzCkIh87rystOh5M/setWebhook?url=https://dc89-2001-448a-20a0-574e-b90a-832-312d-dd20.ngrok-free.app/api/telegram/webhook
 }
