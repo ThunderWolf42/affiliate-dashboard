@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AdmisiRegistrasiSeeder::class,
             RefJurusanSeeder::class,
             RefTahapanSeeder::class,
+            MarketingSeeder::class,
         ]);
     }
 }

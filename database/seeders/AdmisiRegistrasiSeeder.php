@@ -28,7 +28,7 @@ class AdmisiRegistrasiSeeder extends Seeder
                 'email' => 'siti.amina@gmail.com',
                 'no_hp' => '085711223344',
                 'jurusan_id' => 5,
-                'current_step' => 6, // SUDAH STEP 6 (Potensi Reward Cair!)
+                'current_step' => 1, // SUDAH STEP 6 (Potensi Reward Cair!)
                 'step_start_at' => now()->subDays(1),
                 'last_update_at' => now(),
                 'created_at' => now(),

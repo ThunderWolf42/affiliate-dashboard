@@ -18,7 +18,10 @@ class ChatRoom extends Page
 
     public function getLeads()
     {
-        return Lead::whereNotNull('telegram_chat_id')->get();
+        // Mengunci data leads: Hanya yang punya telegram_chat_id DAN dibawa oleh mahasiswa yang sedang login
+        return Lead::whereNotNull('telegram_chat_id')
+            ->where('user_id', auth()->id()) // 🔒 GEMBOK SAKTI DI SINI WAK
+            ->get();
     }
 
     // ini buat milih calon mahasiswa yg buat di chat
@@ -69,4 +72,40 @@ class ChatRoom extends Page
     }
 }
 
+
+// protected function handleRegistration(array $data): Model
+//     {
+//         preg_match('/\d+/', $data['email'], $matches);
+//         $nimFromEmail = $matches[0] ?? null;
+
+//         $mahasiswaUAA = \App\Models\UAA_Mahasiswa::where('nim', $nimFromEmail)
+//             ->where('is_active', true)
+//             ->first();
+
+//         if (!$mahasiswaUAA) {
+//             // Tampilkan Notifikasi Pop-up Merah
+//             Notification::make()
+//                 ->title('Registrasi Gagal')
+//                 ->body('NIM tidak valid atau status mahasiswa tidak aktif di sistem UAA.')
+//                 ->danger() // Warna merah
+//                 ->persistent() // Tidak hilang sampai di-close
+//                 ->send();
+
+//             // Lempar kembali ke form agar user tahu kolom mana yang bermasalah
+//             throw ValidationException::withMessages([
+//                 'email' => 'NIM/Email tidak memenuhi syarat sebagai Affiliate.',
+//             ]);
+//         } else {
+//             $user = $this->getUserModel()::create([
+//                 'name' => $data['name'],
+//                 'email' => $data['email'],
+//                 'password' => $data['password'],
+//                 'nim' => $nimFromEmail,
+//                 'role' => 'affiliate',// ini buat ngekunci dengan email domain UKRIDA bakal jadi affiliate . jadi ini bagian filter antara affiliate dan admin Marketing.
+//                 'affiliate_code' => 'REF-' . strtoupper(Str::random(6)),
+//             ]);
+//         }
+
+//         return $user;
+//     }
 

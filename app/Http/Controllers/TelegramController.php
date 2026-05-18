@@ -12,12 +12,10 @@ use Filament\Notifications\Notification;
 
 class TelegramController extends Controller
 {
-
     public function handleWebhook(Request $request)
     {
         try {
             $data = $request->all();
-
             Log::info('WEBHOOK MASUK', $data);
 
             // Validasi minimal
@@ -30,32 +28,39 @@ class TelegramController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | 1. HANDLE /start (link ke lead)
+            | 1. HANDLE HANDSHAKE AUTOMATICALLY VIA /start
             |--------------------------------------------------------------------------
+            | Calon mahasiswa klik link affiliate -> masuk Telegram -> klik tombol Start.
+            | Telegram mengirim teks: "/start 14" (14 adalah ID Lead)
             */
             if (strpos($messageText, '/start') === 0) {
                 $parts = explode(' ', $messageText);
-                $leadId = $parts[1] ?? null;
+                $leadId = $parts[1] ?? null; // Menangkap ID Lead dari database simulasi
 
                 if ($leadId) {
                     $lead = Lead::find($leadId);
 
                     if ($lead) {
+                        // Jalankan proses update jabat tangan (Handshake)
                         $lead->update([
                             'telegram_chat_id' => $chatId
                         ]);
 
-                        $this->sendReply(
-                            $chatId,
-                            "Halo perkenalkan namaku *{$lead->lead_name}*. Akunmu sudah terhubung!"
-                        );
+                        // 📝 EDIT KATA-KATA BALASAN BOT TELEGRAM DI SINI WAK:
+                        $welcomeMessage = "Halo *{$lead->lead_name}*! Selamat datang di Pusat Informasi & Admisi UKRIDA ✨\n\n" .
+                            "Senang sekali bisa terhubung dengan kamu. Akun Telegram kamu saat ini sudah *resmi terverifikasi* di sistem kami.\n\n" .
+                            "Untuk melanjutkan pengisian berkas dan simulasi pendaftaran kuliah, silakan langsung klik tautan resmi di bawah ini ya:\n" .
+                            "👉 [Sistem Pendaftaran Kampus UKRIDA](https://register.ukrida.ac.id/admisi/public/register/register/registerEmail)\n\n" .
+                            "Jika ada pertanyaan selama proses pendaftaran, ketik saja langsung di sini. Kakak tingkat (Affiliate) kamu siap membantu! 🤝";
+
+                        $this->sendReply($chatId, $welcomeMessage);
 
                         return response()->json(['status' => 'linked']);
                     } else {
-                        $this->sendReply($chatId, "Lead tidak ditemukan.");
+                        $this->sendReply($chatId, "Maaf, data pendaftaran kamu tidak ditemukan di sistem. Silakan ulangi pengisian dari link web.");
                     }
                 } else {
-                    $this->sendReply($chatId, "Format salah. Gunakan: /start ID_LEAD");
+                    $this->sendReply($chatId, "Format verifikasi salah. Silakan masuk melalui tautan resmi dari web.");
                 }
 
                 return response()->json(['ok' => true]);
@@ -63,12 +68,13 @@ class TelegramController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | 2. SIMPAN CHAT MASUK
+            | 2. SIMPAN CHAT MASUK (INBOUND)
             |--------------------------------------------------------------------------
+            | Menyimpan chat biasa dari calon mahasiswa & mengabaikan command /start
             */
             $lead = Lead::where('telegram_chat_id', $chatId)->first();
 
-            if ($lead && $messageText !== '') {
+            if ($lead && $messageText !== '' && strpos($messageText, '/start') !== 0) {
                 ChatMessage::create([
                     'lead_id' => $lead->id,
                     'message_text' => $messageText,
@@ -77,18 +83,28 @@ class TelegramController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | 3. NOTIFICATION (optional, bisa di-disable dulu)
+                | 3. NOTIFIKASI REALTIME HANYA KE MAHASISWA PEMILIK LEAD TERSEBUT
                 |--------------------------------------------------------------------------
                 */
-                $admin = User::where('role', 'affiliate')->first();
+                // 🔒 AMAN & PRIVAT: Ambil user pemilik (affiliate) dari relasi data Lead secara dinamis
+                $affiliateOwner = $lead->user;
 
-                if ($admin) {
+                if ($affiliateOwner) {
                     try {
                         Notification::make()
                             ->title('Pesan Telegram Baru')
-                            ->body("Pesan dari: " . $lead->lead_name)
-                            ->sendToDatabase($admin)
-                            ->broadcast($admin); // matikan dulu kalau belum setup realtime
+                            ->body("Pesan dari Camaba: " . $lead->lead_name)
+                            ->icon('heroicon-o-chat-bubble-left-right')
+                            ->iconColor('success')
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('balas')
+                                    ->button()
+                                    // Melempar rute notifikasi langsung ke Custom Page Chat Room di panel affiliate
+                                    ->url('/affiliate/chat-room')
+                            ])
+                            ->success()
+                            ->sendToDatabase($affiliateOwner) // Masuk ke lonceng dashboard mahasiswa yang tepat
+                            ->broadcast($affiliateOwner); // Trigger Reverb Realtime
                     } catch (\Throwable $e) {
                         Log::error('Notif error: ' . $e->getMessage());
                     }
@@ -110,14 +126,14 @@ class TelegramController extends Controller
     private function sendReply($chatId, $message)
     {
         try {
-            $token = config('services.telegram.bot_token'); // lebih aman dari env()
+            $token = config('services.telegram.bot_token') ?? env('TELEGRAM_BOT_TOKEN');
 
             if (!$token) {
                 Log::error('TELEGRAM TOKEN KOSONG');
                 return;
             }
 
-            $response = Http::timeout(5)->post(
+            $response = Http::withoutVerifying()->timeout(5)->post(
                 "https://api.telegram.org/bot{$token}/sendMessage",
                 [
                     'chat_id' => $chatId,
@@ -139,69 +155,4 @@ class TelegramController extends Controller
             ]);
         }
     }
-    // public function handleWebhook(Request $request)
-    // {
-    //     $data = $request->all();
-
-    //     // Log data yang masuk untuk debugging
-    //     Log::info('Data Telegram Masuk:', $data);
-
-    //     if (!isset($data['message']))
-    //         return response()->json(['ok']);
-
-    //     $chatId = $data['message']['chat']['id'];
-    //     $messageText = $data['message']['text'] ?? '';
-
-    //     // 1. Logic start dengan ID Lead (Handshake)
-    //     if (strpos($messageText, '/start') === 0) {
-    //         $parts = explode(' ', $messageText);
-    //         $leadId = $parts[1] ?? null;
-
-    //         if ($leadId) {
-    //             $lead = Lead::find($leadId);
-    //             if ($lead) {
-    //                 $lead->update(['telegram_chat_id' => $chatId]);
-
-    //                 // PERBAIKAN DI SINI: Masukkan nama lead-nya
-    //                 $this->sendReply($chatId, "Halo perkenalkan namaku *{$lead->lead_name}*. Akunmu sudah terhubung!");
-
-    //                 return response()->json(['status' => 'linked']);
-    //             }
-    //         }
-    //     }
-
-    //     // 2. Simpan pesan masuk (Inbound)
-    //     $lead = Lead::where('telegram_chat_id', $chatId)->first();
-
-    //     // Pastikan tidak menyimpan pesan /start ke database chat agar tidak kotor
-    //     if ($lead && strpos($messageText, '/start') !== 0) {
-    //         ChatMessage::create([
-    //             'lead_id' => $lead->id,
-    //             'message_text' => $messageText,
-    //             'direction' => 'inbound',
-    //         ]);
-
-    //         $admin = User::all()->firstWhere('role', 'affiliate');
-
-    //         if ($admin) {
-    //             Notification::make()
-    //                 ->title('Pesan Telegram Baru')
-    //                 ->icon('heroicon-o-chat-bubble-left-right')
-    //                 ->iconColor('success')
-    //                 ->body("Pesan dari: " . $lead->lead_name)
-    //                 ->actions([
-    //                     \Filament\Notifications\Actions\Action::make('Lihat Chat')
-    //                         ->url(fn () => route('filament.admin.resources.leads.view', $lead->id)) // Sesuaikan link detail chat kamu
-    //                 ])
-    //                 ->sendToDatabase($admin) // Masuk ke lonceng dashboard
-    //                 ->broadcast($admin);    // INI YANG TRIGGER REVERB (REALTIME)
-    //         }
-    //     }
-
-    //     return response()->json(['status' => 'success']);
-    // }
-
-
-
 }
-

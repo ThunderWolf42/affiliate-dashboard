@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\UAA_Mahasiswa;
+use Filament\Panel;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -84,5 +85,22 @@ class User extends Authenticatable
             // Sesuai screenshot table leads, nama kolomnya adalah jurusan_id
             ->join('ref_jurusans', 'leads.jurusan_id', '=', 'ref_jurusans.id')
             ->sum('ref_jurusans.reward_amount');
+    }
+
+
+
+    public function canAccessPanel(Panel $panel): bool// jagaan buat akses panel admin dan affiliate biar gak bisa diakses sembarangan
+    {
+        // Kalau ada yang mau masuk rute /admin, wajib punya role admin
+        if ($panel->getId() === 'admin') {
+            return $this->role === 'admin';
+        }
+
+        // Kalau ada yang mau masuk rute /affiliate, wajib punya role affiliate
+        if ($panel->getId() === 'affiliate') {
+            return $this->role === 'affiliate';
+        }
+
+        return false;
     }
 }

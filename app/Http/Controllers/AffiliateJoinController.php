@@ -28,7 +28,7 @@ class AffiliateJoinController extends Controller
             'wa_number' => 'required|string|max:15', // Gunakan string agar tidak kena limit angka matematika
         ]);
 
-        Lead::create([
+        $lead = Lead::create([
             'user_id' => $request->input('affiliate_id'),
             'lead_name' => $request->input('lead_name'), // Sesuaikan dengan key di validate
             'email' => $request->input('email'),
@@ -36,6 +36,11 @@ class AffiliateJoinController extends Controller
             'status' => 'pending',
         ]);
 
-        return redirect()->away('https://register.ukrida.ac.id/admisi/public/register/register/registerEmail');
+        // 2. Ambil username bot Telegram kamu dari file .env
+        $botUsername = env('TELEGRAM_BOT_USERNAME', 'NamaBotKamu_bot');
+
+        // 3. GAS POL REDIRECT KE TELEGRAM BAWA ID LEAD!
+        // Hasilnya dinamis: https://t.me/NamaBotKamu_bot?start=14
+        return redirect()->away("https://t.me/{$botUsername}?start={$lead->id}");
     }
 }
