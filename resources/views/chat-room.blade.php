@@ -85,8 +85,14 @@
                 <!-- INPUT -->
                 <div class="p-4 border-t bg-white dark:bg-gray-900">
                     <div class="flex gap-2">
-                        <input type="text" wire:model="newMessage" wire:keydown.enter="sendMessage"
-                            placeholder="Tulis pesan..." class="flex-1 rounded-full border text-sm">
+                        <input type="text" wire:model="newMessage" wire:keydown.enter.prevent="sendMessage"
+                            placeholder="Tulis pesan..."
+                            class="flex-1 rounded-full border border-gray-300 dark:border-gray-700
+                                bg-gray-100 dark:bg-gray-800
+                                text-gray-900 dark:text-white
+                                placeholder-gray-400 dark:placeholder-gray-500
+                                focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                                px-4 py-2 text-sm transition" />
 
                         <button wire:click="sendMessage" class="bg-primary-600 text-white p-2 rounded-full w-10 h-10">
                             ➤

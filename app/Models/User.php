@@ -91,16 +91,16 @@ class User extends Authenticatable
 
     public function canAccessPanel(Panel $panel): bool// jagaan buat akses panel admin dan affiliate biar gak bisa diakses sembarangan
     {
-        // Kalau ada yang mau masuk rute /admin, wajib punya role admin
-        if ($panel->getId() === 'admin') {
-            return $this->role === 'admin';
-        }
+        // // Kalau ada yang mau masuk rute /admin, wajib punya role admin
+        // if ($panel->getId() === 'admin') {
+        //     return $this->role === 'admin';
+        // }
 
-        // Kalau ada yang mau masuk rute /affiliate, wajib punya role affiliate
-        if ($panel->getId() === 'affiliate') {
-            return $this->role === 'affiliate';
-        }
+        // // Kalau ada yang mau masuk rute /affiliate, wajib punya role affiliate
+        // if ($panel->getId() === 'affiliate') {
+        //     return $this->role === 'affiliate';
+        // }
 
-        return false;
+        return true; 
     }
 }

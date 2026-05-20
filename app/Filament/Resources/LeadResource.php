@@ -149,4 +149,10 @@ class LeadResource extends Resource
             'edit' => Pages\EditLead::route('/{record}/edit'),
         ];
     }
+
+    public static function canViewAny(): bool
+    {
+        // Hanya affiliate yang bisa melihat menu Leads
+        return auth()->user()?->role === 'affiliate';
+    }
 }

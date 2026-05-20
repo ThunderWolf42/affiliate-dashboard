@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             RefJurusanSeeder::class,
             RefTahapanSeeder::class,
             MarketingSeeder::class,
+            MarketingMaterialSeeder::class,
         ]);
     }
 }

@@ -24,6 +24,12 @@ class ChatRoom extends Page
             ->get();
     }
 
+    public static function canAccess(): bool
+    {
+        // Hanya akun mahasiswa (affiliate) yang punya menu chat ini wak!
+        return auth()->user()?->role === 'affiliate';
+    }
+
     // ini buat milih calon mahasiswa yg buat di chat
     public function selectLead($leadId)
     {
