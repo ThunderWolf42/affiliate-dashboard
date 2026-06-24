@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\LeadResource\Pages;
 use App\Filament\Resources\LeadResource\RelationManagers;
+use App\Filament\Resources\MarketingMaterialResource\Pages as MarketingMaterialPages;
 use Carbon\CarbonInterface;
 use Carbon\Constants\DiffOptions;
 use App\Models\Lead;
@@ -14,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+
 
 
 class LeadResource extends Resource
@@ -34,92 +36,178 @@ class LeadResource extends Resource
     {
         return $table
             ->columns([
+
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Aff.')
+                    ->searchable()
+                    ->size('xs')
+                    ->limit(15)
+                    ->visible(fn() => auth()->user()?->role === 'admin')
+                    ->formatStateUsing(
+                        fn($record) =>
+                        $record->user?->role === 'affiliate'
+                        ? $record->user?->name
+                        : '-'
+                    ),
+
                 Tables\Columns\TextColumn::make('lead_name')
-                    ->label('Calon Mahasiswa')
-                    ->searchable(),
+                    ->label('Nama')
+                    ->searchable()
+                    ->size('xs')
+                    ->limit(20),
 
                 Tables\Columns\TextColumn::make('no_registrasi')
-                    ->label('No. Registrasi')
-                    ->placeholder('Belum Terdeteksi')
+                    ->label('Reg.')
+                    ->placeholder('-')
                     ->badge()
+                    ->size('xs')
                     ->color(fn($state) => $state ? 'success' : 'gray'),
 
-                // Memanggil Nama Tahap (Step Name) dari tabel RefTahapan via AdmisiRegistration
                 Tables\Columns\TextColumn::make('admisiRegistration.refTahapan.step_name')
-                    ->label('Tahapan Saat Ini')
-                    ->placeholder('Pending (Belum Daftar)')
-                    ->description(fn($record) => $record->no_registrasi ? 'Progres Pendaftaran ' : null),
+                    ->label('Tahap')
+                    ->size('xs')
+                    ->placeholder('Pending')
+                    ->wrap()
+                    ->color(
+                        fn($record) =>
+                        (int) $record->admisiRegistration?->current_step === 4
+                        ? 'success'
+                        : 'gray'
+                    ),
 
-                Tables\Columns\TextColumn::make('admisiRegistration.current_step')
-                    ->searchable()
+                Tables\Columns\TextColumn::make('batch_number')
+                    ->label('Batch')
+                    ->badge()
+                    ->size('xs')
+                    ->sortable()
+                    ->getStateUsing(
+                        fn($record) =>
+                        "B{$record->batch_number}-{$record->batch_year}"
+                    )
+                    ->color('info'),
+
+                Tables\Columns\TextColumn::make('admisiRegistration.total_dibayar')
+                    ->label('Bayar')
+                    ->money('IDR')
+                    ->size('xs'),
+
+                Tables\Columns\TextColumn::make('status_sgs.persen')
+                    ->label('%')
                     ->alignCenter()
-                    ->label('Tahap'),
+                    ->size('xs')
+                    ->getStateUsing(
+                        fn($record) =>
+                        $record->status_sgs['persen']
+                    ),
 
-                Tables\Columns\TextColumn::make('urgency')
-                    ->label('Status Urgensi')
+                Tables\Columns\TextColumn::make('countdown_h7')
+                    ->label('Deadline')
+                    ->badge()
+                    ->size('xs')
                     ->getStateUsing(function ($record) {
-                        // 1. Cek apakah sudah match dengan data admisi
+
                         $admisi = $record->admisiRegistration;
-                        if (!$admisi || !$admisi->refTahapan) {
-                            return 'Menunggu Registrasi';
+
+                        if (!$admisi || (int) $admisi->current_step !== 4) {
+                            return 'Tunggu';
                         }
 
-                        // 2. Ambil data SLA & Waktu Mulai Tahap
-                        $tglMulaiTahap = \Carbon\Carbon::parse($admisi->step_start_at);
-                        $batasHari = $admisi->refTahapan->sla_days;
+                        if (!$admisi->step_start_at) {
+                            return '-';
+                        }
 
-                        // 3. Hitung Deadline (Tgl Mulai + SLA hari)
-                        $deadline = $tglMulaiTahap->copy()->addDays($batasHari);
+                        $tglMulaiTahap = \Carbon\Carbon::parse(
+                            $admisi->step_start_at
+                        );
 
-                        // 4. Cek apakah sekarang sudah lewat deadline?
+                        $batasHari =
+                            $admisi->refTahapan?->sla_days ?? 7;
+
+                        $deadline = $tglMulaiTahap
+                            ->copy()
+                            ->addDays($batasHari);
+
                         if (now()->greaterThan($deadline)) {
-                            $telat = ($deadline->diffInDays());
-                            return "High Priority (Telat {$telat} Hari)";
+
+                            $telatHari =
+                                now()->diffInDays($deadline);
+
+                            return "Lwt {$telatHari}H";
                         }
 
-                        // 5. Jika belum lewat, tampilkan sisa waktu
-                        return "Normal (Sisa " . $deadline->diffForHumans(now(), [
-                            'syntax' => CarbonInterface::DIFF_RELATIVE_TO_NOW,
-                            'parts' => 1,
-                        ]) . ")";
+                        $sisaHari =
+                            now()->diffInDays($deadline, false);
+
+                        if ($sisaHari == 0) {
+                            return 'Hari Ini';
+                        }
+
+                        return "H+{$sisaHari}";
                     })
-                    ->badge()
-                    ->color(fn($state) => str_contains($state, 'High') ? 'danger' : 'success'),
-
-                // Kolom Urgensi (SLA)
-                // Tables\Columns\TextColumn::make('urgency')
-                //     ->label('Urgensi')
-                //     ->getStateUsing(function ($record) {
-                //         if (!$record->admisiRegistration || !$record->admisiRegistration->refTahapan) {
-                //             return 'Normal';
-                //         }
-
-                //         $start = \Carbon\Carbon::parse($record->admisiRegistration->step_start_at);
-                //         $days = $start->diffInDays(now());
-                //         $sla = $record->admisiRegistration->refTahapan->sla_days;
-
-                //         return $days > $sla ? 'High Priority (Stalled)' : 'Normal';
-                //     })
-                //     ->badge()
-                //     ->color(fn($state) => $state === 'High Priority (Stalled)' ? 'danger' : 'success'),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'active' => 'success',
-                        'pending' => 'warning',
-                        'drop-out' => 'danger',
+                    ->color(fn($state) => match (true) {
+                        str_contains($state, 'Lewat') => 'danger',
+                        str_contains($state, 'Hari Ini') => 'warning',
+                        str_contains($state, 'H+') => 'info',
                         default => 'gray',
                     }),
 
-                // Status Reward
-                Tables\Columns\IconColumn::make('reward_status')
-                    ->label('Reward Cair')
-                    ->boolean()
+                Tables\Columns\TextColumn::make('kondisi_urgent')
+                    ->label('Urgent')
+                    ->badge()
+                    ->size('xs')
+                    ->getStateUsing(
+                        fn($record) =>
+                        $record->status_sgs['is_urgent']
+                        ? 'Ya'
+                        : 'Tidak'
+                    )
+                    ->color(
+                        fn($state) =>
+                        $state === 'Ya'
+                        ? 'danger'
+                        : 'success'
+                    ),
+
+                Tables\Columns\TextColumn::make('reward_status_sgs')
+                    ->label('Reward')
+                    ->badge()
+                    ->size('xs')
+                    ->wrap()
                     ->getStateUsing(function ($record) {
-                        // Reward cair jika sudah mencapai step 6 atau lebih
-                        return ($record->admisiRegistration?->current_step >= 6);
+
+                        $status =
+                            $record->status_sgs['reward_status'];
+
+                        return match ($status) {
+
+                            'Sah (Bisa Cair)' => 'Cair',
+
+                            'Sah (Cair - Refund Case)' => 'Refund',
+
+                            'Menunggu Pelunasan (Min 20%)'
+                            => 'Tunggu 20%',
+
+                            'Belum Layak'
+                            => 'Belum',
+
+                            default => $status,
+                        };
+                    })
+                    ->color(fn($state) => match ($state) {
+
+                        'Cair',
+                        'Refund'
+                        => 'success',
+
+                        'Tunggu 20%'
+                        => 'warning',
+
+                        'Belum'
+                        => 'gray',
+
+                        default => 'gray',
                     }),
+
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -128,31 +216,58 @@ class LeadResource extends Resource
                         'pending' => 'Pending',
                         'drop-out' => 'Batal',
                     ]),
+
+                Tables\Filters\SelectFilter::make('batch_number')
+                    ->label('Gel.')
+                    ->options([
+                        1 => 'Batch 1 Tahun 2026',
+                        2 => 'Batch 2 Tahun 2026',
+                    ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-            ]);
+                // Tables\Actions\EditAction::make()
+                //     ->visible(fn() => auth()->check() && auth()->user()->role === 'admin'),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->striped();
     }
+
+
 
     // Tambahkan ini supaya Mahasiswa cuma bisa liat Lead-nya sendiri
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->where('user_id', auth()->id());
+        $user = auth()->user();
+
+        // Jika yang login adalah Admin, buka akses gembok (Bisa lihat semua data leads global)
+        if ($user?->role === 'admin') {
+            return parent::getEloquentQuery();
+        }
+
+        // Jika yang login adalah Mahasiswa Affiliate, batasi data miliknya sendiri saja
+        return parent::getEloquentQuery()->where('user_id', $user?->id);
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListLeads::route('/'),
-            'create' => Pages\CreateLead::route('/create'),
-            'edit' => Pages\EditLead::route('/{record}/edit'),
         ];
     }
 
     public static function canViewAny(): bool
     {
-        // Hanya affiliate yang bisa melihat menu Leads
-        return auth()->user()?->role === 'affiliate';
+        // Admin dan Affiliate sama-sama berhak melihat menu data Leads ini
+        return in_array(auth()->user()?->role, ['admin', 'affiliate']);
     }
+
+    // public static function canEdit($record): bool
+    // {
+    //     return auth()->user()?->role === 'admin';
+    // }
+    // public static function canCreate(): bool
+    // {
+    //     return auth()->user()?->role === 'admin';
+    // }
+
 }

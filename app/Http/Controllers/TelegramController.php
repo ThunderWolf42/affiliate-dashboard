@@ -72,7 +72,7 @@ class TelegramController extends Controller
             |--------------------------------------------------------------------------
             | Menyimpan chat biasa dari calon mahasiswa & mengabaikan command /start
             */
-            $lead = Lead::where('telegram_chat_id', $chatId)->first();
+            $lead = Lead::where('telegram_chat_id', '=', $chatId)->first();
 
             if ($lead && $messageText !== '' && strpos($messageText, '/start') !== 0) {
                 ChatMessage::create([
@@ -102,7 +102,6 @@ class TelegramController extends Controller
                                     // Melempar rute notifikasi langsung ke Custom Page Chat Room di panel affiliate
                                     ->url('/affiliate/chat-room')
                             ])
-                            ->success()
                             ->sendToDatabase($affiliateOwner) // Masuk ke lonceng dashboard mahasiswa yang tepat
                             ->broadcast($affiliateOwner); // Trigger Reverb Realtime
                     } catch (\Throwable $e) {

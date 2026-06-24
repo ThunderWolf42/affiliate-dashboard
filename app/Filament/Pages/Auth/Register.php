@@ -62,6 +62,21 @@ class Register extends BaseRegister
 
 
         } else {
+
+            if (!str_ends_with($data['email'], '@civitas.ukrida.ac.id')) {
+                Notification::make()
+                    ->title('Registrasi Gagal')
+                    ->body('Pendaftaran hanya diperbolehkan menggunakan Email Resmi Civitas UKRIDA.')
+                    ->danger()
+                    ->persistent()
+                    ->send();
+
+                throw ValidationException::withMessages([
+                    'email' => 'Domain email harus menggunakan @civitas.ukrida.ac.id',
+                ]);
+            }
+
+
             preg_match('/\d+/', $data['email'], $matches);
             $nimFromEmail = $matches[0] ?? null;
 
@@ -70,7 +85,7 @@ class Register extends BaseRegister
                 ->first();
 
             if (!$mahasiswaUAA) {
-                // Tampilkan Notifikasi Pop-up Merah
+                // Tampilin notifikasi kalo ga cocok sama sistem UAA yg aktif
                 Notification::make()
                     ->title('Registrasi Gagal')
                     ->body('NIM tidak valid atau status mahasiswa tidak aktif di sistem UAA.')
@@ -88,10 +103,11 @@ class Register extends BaseRegister
                     'email' => $data['email'],
                     'password' => $data['password'],
                     'nim' => $nimFromEmail,
-                    'role' => 'affiliate',// ini buat ngekunci dengan email domain UKRIDA bakal jadi affiliate . jadi ini bagian filter antara affiliate dan admin Marketing.
+                    'role' => 'affiliate', // Mengunci role agar otomatis jadi affiliate
                     'affiliate_code' => 'REF-' . strtoupper(Str::random(6)),
                 ]);
             }
+
             return $user;
         }
 

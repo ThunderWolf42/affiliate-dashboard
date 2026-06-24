@@ -12,20 +12,13 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Model;
 
 class RefTahapanResource extends Resource
 {
     protected static ?string $model = RefTahapan::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-    public static function form(Form $form): Form
-    {
-        return $form
-            ->schema([
-                //
-            ]);
-    }
 
     public static function table(Table $table): Table
     {
@@ -39,12 +32,37 @@ class RefTahapanResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn() => auth()->user()?->role === 'admin'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn() => auth()->user()?->role === 'admin'),
                 ]),
+            ]);
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+
+                Forms\Components\TextInput::make('step_number')
+                    ->label('Nomor Tahap')
+                    ->numeric()
+                    ->required(),
+
+                Forms\Components\TextInput::make('step_name')
+                    ->label('Nama Tahapan')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\TextInput::make('sla_days')
+                    ->label('SLA (Hari)')
+                    ->numeric()
+                    ->required(),
+
             ]);
     }
 
@@ -62,5 +80,20 @@ class RefTahapanResource extends Resource
             'create' => Pages\CreateRefTahapan::route('/create'),
             'edit' => Pages\EditRefTahapan::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->role === 'admin';
     }
 }

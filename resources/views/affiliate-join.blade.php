@@ -55,7 +55,7 @@
         </form>
 
         <p class="mt-6 text-center text-xs text-gray-400 italic">
-            *Dengan menekan tombol, Anda akan diarahkan ke portal pendaftaran resmi UKRIDA.
+            {{-- *Dengan menekan tombol, Anda akan diarahkan ke portal pendaftaran resmi UKRIDA. --}}
         </p>
     </div>
 </body>

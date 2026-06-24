@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use App\Models\Lead;
 
 class AffiliateStats extends BaseWidget
 {
@@ -16,64 +17,69 @@ class AffiliateStats extends BaseWidget
         // --------------------------------------------------------------------------
         if ($user->role === 'admin') {
 
-            // Hitung total dari seluruh leads yang ada di database tanpa filter user_id
-            $totalLeadsGlobal = \App\Models\Lead::count();
-            $totalMatchGlobal = \App\Models\Lead::whereNotNull('no_registrasi')->count();
+            $totalLeadsGlobal = Lead::count();
+            $totalMatchGlobal = Lead::whereNotNull('no_registrasi')->count();
 
-            // Hitung total seluruh reward terkumpul dari semua user affiliate
-            $totalRewardGlobal = \App\Models\User::where('role', 'affiliate')->get()->sum('total_reward') ?? 0;
+            // 🎯 HITUNG REWARD GLOBAL DINAMIS BERDASARKAN REWARD JURUSAN
+            // Menggunakan eager loading 'jurusan' agar query tetap ringan (mencegah N+1 Issue)
+            $allLeads = Lead::with('jurusan')->get();
+            $totalRewardGlobal = 0;
+
+            foreach ($allLeads as $lead) {
+                // Pastikan data status sgs dan relasi jurusannya ada sebelum dihitung
+                if (isset($lead->status_sgs['reward_status']) && str_contains($lead->status_sgs['reward_status'], 'Sah')) {
+                    // Ambil nominal langsung dari relasi jurusan, jika kosong default ke 0
+                    $totalRewardGlobal += $lead->jurusan?->reward_amount ?? 0;
+                }
+            }
 
             return [
-                Stat::make(
-                    'Total Seluruh Camaba (Global)',
-                    $totalLeadsGlobal
-                )
+                Stat::make('Total Seluruh Camaba (Global)', $totalLeadsGlobal)
                     ->description('Total calon mahasiswa dari semua affiliate')
                     ->chart([5, 8, 12, 18, 25])
                     ->color('info'),
 
-                Stat::make(
-                    'Total Terdaftar Match (Global)',
-                    $totalMatchGlobal
-                )
+                Stat::make('Total Terdaftar Match (Global)', $totalMatchGlobal)
                     ->description('Semua camaba yang sudah masuk admisi')
                     ->color('success'),
 
-                Stat::make('Total Reward Keluar', function () use ($totalRewardGlobal) {
-                    return 'Rp ' . number_format($totalRewardGlobal, 0, ',', '.');
-                })
-                    ->description('Akumulasi dana komisi untuk seluruh affiliate')
+                Stat::make('Total Reward Keluar', 'Rp ' . number_format($totalRewardGlobal, 0, ',', '.'))
+                    ->description('Akumulasi dana komisi sah untuk seluruh affiliate')
                     ->descriptionIcon('heroicon-m-banknotes')
-                    ->color('danger'), // Diberi warna merah/danger karena statusnya kas keluar bagi admin
+                    // ->color('danger'), // Warna merah karena kas keluar bagi kampus
             ];
         }
 
-        // --------------------------------------------------------------------------
-        // JALUR SKENARIO 2: JIKA YANG LOGIN ADALAH MAHASISWA AFFILIATE (PRIVATE STATS)
-        // --------------------------------------------------------------------------
+
+        // Tarik data lead milik user yang login beserta data jurusannya
+        $myLeads = Lead::where('user_id', $user->id)->with('jurusan')->get();
+
+        $totalTeman = $myLeads->count();
+        $totalMatchPrivate = $myLeads->whereNotNull('no_registrasi')->count();
+
+
+        $myRewardTerkumpul = 0;
+        foreach ($myLeads as $lead) {
+            if (isset($lead->status_sgs['reward_status']) && str_contains($lead->status_sgs['reward_status'], 'Sah')) {
+                // Tambahkan nominal reward sesuai dengan jurusan target si maba
+                $myRewardTerkumpul += $lead->jurusan?->reward_amount ?? 0;
+            }
+        }
+
         return [
-            Stat::make(
-                'Total Teman yang Diajak',
-                \App\Models\Lead::where('user_id', $user->id)->count()
-            )
+            Stat::make('Total Teman yang Diajak', $totalTeman)
                 ->description('Berdasarkan klik link affiliate')
                 ->chart([7, 2, 10, 3, 15, 4, 17])
                 ->color('info'),
 
-            Stat::make(
-                'Status Terdaftar (Match)',
-                \App\Models\Lead::where('user_id', $user->id)->whereNotNull('no_registrasi')->count()
-            )
+            Stat::make('Status Terdaftar (Match)', $totalMatchPrivate)
                 ->description('Sudah masuk sistem admisi')
                 ->color('success'),
 
-            Stat::make('Reward Terkumpul', function () use ($user) {
-                $amount = $user->total_reward ?? 0;
-                return 'Rp ' . number_format($amount, 0, ',', '.');
-            })
-                ->description('Komisi dari pendaftar yang lunas Pembayaran Uang Pangkal')
+            Stat::make('Reward Terkumpul', 'Rp ' . number_format($myRewardTerkumpul, 0, ',', '.'))
+                ->description('Cair jika total cicilan pembayaran maba >= 20%')
                 ->descriptionIcon('heroicon-m-banknotes')
-                ->color('success'),
+                ->color('success'), // Warna hijau karena rezeki masuk bagi mahasiswa
         ];
     }
 }

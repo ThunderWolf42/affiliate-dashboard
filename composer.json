@@ -7,13 +7,16 @@
     "require": {
         "php": "^8.2",
         "filament/filament": "3.3",
+        "laravel-notification-channels/webpush": "^10.5",
         "laravel/framework": "^11.0",
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
+        "minishlink/web-push": "^10.0",
         "pusher/pusher-php-server": "^7.2"
     },
     "require-dev": {
+        "beyondcode/laravel-er-diagram-generator": "^6.0",
         "fakerphp/faker": "^1.23",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",

@@ -9,27 +9,24 @@ class RefTahapanSeeder extends Seeder
 {
     public function run(): void
     {
+        // Bersihkan data 8 tahap yang lama biar gak nyampah
+        DB::table('ref_tahapans')->truncate();
+
         $tahapan = [
-            ['step_number' => 1, 'step_name' => 'Pengisian Formulir', 'sla_days' => 2],
-            ['step_number' => 2, 'step_name' => 'Upload Berkas (Ijazah/SKL)', 'sla_days' => 3],
-            ['step_number' => 3, 'step_name' => 'Verifikasi Dokumen', 'sla_days' => 2],
-            ['step_number' => 4, 'step_name' => 'Ujian Saringan Masuk (USM)', 'sla_days' => 1],
-            ['step_number' => 5, 'step_name' => 'Wawancara (Khusus Prodi Tertentu)', 'sla_days' => 3],
-            ['step_number' => 6, 'step_name' => 'Pembayaran Uang Pangkal', 'sla_days' => 7], // Titik cair reward
-            ['step_number' => 7, 'step_name' => 'Penyerahan Jas Almamater', 'sla_days' => 14],
-            ['step_number' => 8, 'step_name' => 'Mahasiswa Baru (Lunas)', 'sla_days' => 0],
+            ['step_number' => 1, 'step_name' => 'Pembayaran Biaya Formulir', 'sla_days' => 0],
+            ['step_number' => 2, 'step_name' => 'Upload Berkas Rapor & Kesehatan', 'sla_days' => 0],
+            ['step_number' => 3, 'step_name' => 'Seleksi Pendaftaran (Proses Admisi)', 'sla_days' => 0],
+            ['step_number' => 4, 'step_name' => 'Pengumuman Kelulusan & Pembayaran Biaya Kuliah', 'sla_days' => 7], // 🔥 Pemicu H-7
         ];
 
         foreach ($tahapan as $t) {
-            DB::table('ref_tahapans')->updateOrInsert(
-                ['step_number' => $t['step_number']], // Kunci pengecekan
-                [
-                    'step_name' => $t['step_name'],
-                    'sla_days' => $t['sla_days'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
+            DB::table('ref_tahapans')->insert([
+                'step_number' => $t['step_number'],
+                'step_name' => $t['step_name'],
+                'sla_days' => $t['sla_days'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 }

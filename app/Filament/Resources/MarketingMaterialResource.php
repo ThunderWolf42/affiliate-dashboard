@@ -12,19 +12,21 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Model;
+
 
 class MarketingMaterialResource extends Resource
 {
     protected static ?string $model = MarketingMaterial::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    
+
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-               Forms\Components\TextInput::make('title')
+                Forms\Components\TextInput::make('title')
                     ->label('Judul Materi Pemasaran')
                     ->required()
                     ->maxLength(255),
@@ -53,15 +55,30 @@ class MarketingMaterialResource extends Resource
                 // Aksi klik cepat untuk mendownload/membuka link materi
                 Tables\Columns\TextColumn::make('download_link')
                     ->label('Aksi')
-                    ->formatStateUsing(fn () => 'Buka / Download Materi 📥')
+                    ->formatStateUsing(fn() => 'Buka / Download Materi 📥')
                     ->color('primary')
-                    ->url(fn ($record) => $record->download_link, true), // true = open in new tab
+                    ->url(fn($record) => $record->download_link, true), // true = open in new tab
             ])
             ->actions([
                 // Tombol edit dan delete HANYA MUNCUL jika yang login adalah admin
-                Tables\Actions\EditAction::make()->visible(fn () => auth()->user()?->role === 'admin'),
-                Tables\Actions\DeleteAction::make()->visible(fn () => auth()->user()?->role === 'admin'),
+                Tables\Actions\EditAction::make()->visible(fn() => auth()->user()?->role === 'admin'),
+                Tables\Actions\DeleteAction::make()->visible(fn() => auth()->user()?->role === 'admin'),
             ]);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return auth()->user()?->role === 'admin';
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return auth()->user()?->role === 'admin';
     }
 
     public static function getRelations(): array
@@ -76,6 +93,7 @@ class MarketingMaterialResource extends Resource
         return [
             'index' => Pages\ListMarketingMaterials::route('/'),
             'create' => Pages\CreateMarketingMaterial::route('/create'),
+            'view' => Pages\ViewMarketingMaterial::route('/{record}'),
             'edit' => Pages\EditMarketingMaterial::route('/{record}/edit'),
         ];
     }
