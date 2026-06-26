@@ -100,6 +100,18 @@ class LeadResource extends Resource
                         $record->status_sgs['persen']
                     ),
 
+                // Tables\Columns\TextColumn::make('status_sgs')
+                //     ->label('Deg')
+                //     ->getStateUsing(function ($record) {
+
+                //         return json_encode([
+                //             'tagihan' => $record->admisiRegistration?->total_tagihan,
+                //             'dibayar' => $record->admisiRegistration?->total_dibayar,
+                //             'persen' => $record->status_sgs['persen'],
+                //             'urgent' => $record->status_sgs['is_urgent'],
+                //         ]);
+                //     }),
+
                 Tables\Columns\TextColumn::make('countdown_h7')
                     ->label('Deadline')
                     ->badge()
@@ -123,31 +135,47 @@ class LeadResource extends Resource
                         $batasHari =
                             $admisi->refTahapan?->sla_days ?? 7;
 
-                        $deadline = $tglMulaiTahap
-                            ->copy()
-                            ->addDays($batasHari);
+                        $deadline = $tglMulaiTahap->copy()->addDays($batasHari);
 
-                        if (now()->greaterThan($deadline)) {
+                        // $sisaHari = now()->diffInDays($deadline, false);
+                        $sisaHari = (int) ceil(now()->diffInDays($deadline, false));
 
-                            $telatHari =
-                                now()->diffInDays($deadline);
-
-                            return "Lwt {$telatHari}H";
+                        if ($sisaHari < 0) {
+                            return "Lewat " . abs($sisaHari) . "H";
                         }
-
-                        $sisaHari =
-                            now()->diffInDays($deadline, false);
 
                         if ($sisaHari == 0) {
-                            return 'Hari Ini';
+                            return "Hari Ini";
                         }
 
-                        return "H+{$sisaHari}";
+                        return "H-{$sisaHari}";
                     })
+
+                    //     $deadline = $tglMulaiTahap
+                    //         ->copy()
+                    //         ->addDays($batasHari);
+
+                    //     if (now()->greaterThan($deadline)) {
+
+                    //         $telatHari =
+                    //             now()->diffInDays($deadline);
+
+                    //         return "Lewat {$telatHari}H";
+                    //     }
+
+                    //     $sisaHari =
+                    //         now()->diffInDays($deadline, false);
+
+                    //     if ($sisaHari == 0) {
+                    //         return 'Hari Ini';
+                    //     }
+
+                    //     return "H-{$sisaHari}";
+                    // })
                     ->color(fn($state) => match (true) {
                         str_contains($state, 'Lewat') => 'danger',
                         str_contains($state, 'Hari Ini') => 'warning',
-                        str_contains($state, 'H+') => 'info',
+                        str_contains($state, 'H-') => 'info',
                         default => 'gray',
                     }),
 

@@ -51,42 +51,69 @@ class Lead extends Model
         return $this->belongsTo(Admisi_Registration::class, 'no_registrasi', 'no_registrasi');
     }
 
-    /**
-     * 🎯 LOGIKA REVISI ADMISI: Hitung Persentase & Pemicu H-7 di Tahap 4
-     */
+
     public function getStatusSgsAttribute(): array
     {
-        // 🔑 KUNCI SINKRONISASI REALTIME: Ambil data langsung dari objek relasi admisi!
+
+
         $admisi = $this->admisiRegistration;
 
-        // Jika data admisi ada, pakai duit dari admisi. Kalau gak ada, baru pakai bawaan leads.
+
         $tagihan = $admisi ? $admisi->total_tagihan : $this->total_tagihan;
         $dibayar = $admisi ? $admisi->total_dibayar : $this->total_dibayar;
 
-        // Rumus hitung persentase pembayaran uang masuk kuliah
+
         $persentase = $tagihan > 0 ? ($dibayar / $tagihan) * 100 : 0;
 
         $urgent = false;
         $rewardStatus = 'Belum Layak';
 
-        // Membaca current_step milik Admisi
+
         $currentStep = $admisi?->current_step;
 
-        // Pemicu aktif jika status lemparan admisi sudah masuk tahap 4
         if ((int) $currentStep === 4) {
 
-            // Jagaan URGENT H-7: Jika di tahap 4 total bayar masih di bawah 20%
-            if ($persentase < 20) {
-                $urgent = true;
-            }
+            $urgent = false;
 
-            // Penentuan nasib status reward affiliator
+            if ($admisi?->step_start_at) {
+
+                $mulai = \Carbon\Carbon::parse($admisi->step_start_at);
+
+                $batasHari = $admisi->refTahapan?->sla_days ?? 7;
+
+                $deadline = $mulai->copy()->addDays($batasHari);
+
+                $sisaHari = now()->diffInDays($deadline, false);
+
+                if ($persentase >= 20) {
+                    $urgent = false;
+                } else {
+                    if ($sisaHari <= 0) {
+                        $urgent = true;
+                    } else {
+                        $urgent = false;
+                    }
+                }
+            }
+        }
+
+        // $currentStep = $admisi?->current_step;
+
+
+        // if ((int) $currentStep === 4) {
+
+        //     // Jagaan URGENT H-7: Jika di tahap 4 total bayar masih di bawah 20%
+        //     if ($persentase < 20) {
+        //         $urgent = true;
+        //     }
+
+        //     // Penentuan nasib status reward affiliator
             if ($this->is_refund_case) {
                 $rewardStatus = $persentase >= 20 ? 'Sah (Cair - Refund Case)' : 'Hangus (Refund < 20%)';
             } else {
                 $rewardStatus = $persentase >= 20 ? 'Sah (Bisa Cair)' : 'Menunggu Pelunasan (Min 20%)';
             }
-        }
+        
 
         return [
             'is_urgent' => $urgent,
