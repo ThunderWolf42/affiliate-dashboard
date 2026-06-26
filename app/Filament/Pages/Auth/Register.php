@@ -34,7 +34,7 @@ class Register extends BaseRegister
     protected function handleRegistration(array $data): Model
     {
         //jagaan buat validasi email yg masuk itu email marketing atau marketing format mahasiswa
-        if (str_ends_with($data['email'], '@admisiukrida.ac.id')) {
+        if (str_ends_with($data['email'], '@ukrida.ac.id')) {
             // ini untuk register dengan email marketing , kalo cocok sama database jadi
             $marketing = Marketing::where('is_active', true)->where('email', $data['email'])->first();
             if (!$marketing) {

@@ -15,21 +15,11 @@ class MarketingSeeder extends Seeder
         // Data dummy staff marketing UKRIDA yang diizinkan untuk registrasi akun
         $marketingStaffs = [
             [
-                'name' => 'Stevanus UKRIDA Pusat',
-                'email' => 'stevanus@admisiukrida.ac.id',
+                'name' => 'Jonathan',
+                'email' => 'jonathan@admisiukrida.ac.id',
                 'is_active' => true,
+            ],
 
-            ],
-            [
-                'name' => 'Budi Santoso (Marketing)',
-                'email' => 'BudiSantoso@admisiukrida.ac.id',
-                'is_active' => true,
-            ],
-            [
-                'name' => 'Siti Aminah (Admisi)',
-                'email' => 'SitiAminah@admisiukrida.ac.id',
-                'is_active' => true,
-            ],
         ];
 
         foreach ($marketingStaffs as $staff) {

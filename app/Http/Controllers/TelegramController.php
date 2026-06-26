@@ -125,8 +125,10 @@ class TelegramController extends Controller
     private function sendReply($chatId, $message)
     {
         try {
-            $token = config('services.telegram.bot_token') ?? env('TELEGRAM_BOT_TOKEN');
 
+            // $token = config('services.telegram.bot_token') ?? env('TELEGRAM_BOT_TOKEN');
+            $token = config('services.telegram.bot_token');
+            // var_dump($token); die; // Debug token Telegram
             if (!$token) {
                 Log::error('TELEGRAM TOKEN KOSONG');
                 return;
