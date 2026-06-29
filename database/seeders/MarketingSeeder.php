@@ -16,7 +16,7 @@ class MarketingSeeder extends Seeder
         $marketingStaffs = [
             [
                 'name' => 'Jonathan',
-                'email' => 'jonathan@admisiukrida.ac.id',
+                'email' => 'jonathan@ukrida.ac.id',
                 'is_active' => true,
             ],
 

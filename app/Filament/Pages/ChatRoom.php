@@ -20,7 +20,7 @@ class ChatRoom extends Page
     {
         // Mengunci data leads: Hanya yang punya telegram_chat_id DAN dibawa oleh mahasiswa yang sedang login
         return Lead::whereNotNull('telegram_chat_id')
-            // ->where('user_id', auth()->id()) // 🔒 GEMBOK SAKTI DI SINI WAK
+            ->where('user_id', auth()->id()) // 🔒 GEMBOK SAKTI DI SINI WAK
             ->get();
     }
 

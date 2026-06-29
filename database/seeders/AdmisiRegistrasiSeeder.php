@@ -31,9 +31,9 @@ class AdmisiRegistrasiSeeder extends Seeder
             // ],
             [
                 'no_registrasi' => 'REG-2026-002',
-                'nama_calon' => 'Yudhi',
-                'email' => 'yudhi.yk@gmail.com',
-                'no_hp' => '0812233213',
+                'nama_calon' => 'Darrel',
+                'email' => 'darrelchristhoper@gmail.com',
+                'no_hp' => '081234567890',
                 'jurusan_id' => 1,
                 'current_step' => 1,
                 'total_tagihan' => 20000000.00,

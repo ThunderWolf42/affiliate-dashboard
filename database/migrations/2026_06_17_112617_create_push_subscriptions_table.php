@@ -13,10 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
+        if (Schema::connection(config('webpush.database_connection'))->hasTable(config('webpush.table_name'))) {
+            return;
+        }
+
         Schema::connection(config('webpush.database_connection'))->create(config('webpush.table_name'), function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->morphs('subscribable', 'push_subscriptions_subscribable_morph_idx');
-            $table->string('endpoint', 500)->unique();
+            $table->string('endpoint', 500)->charset('ascii')->unique();
             $table->string('public_key')->nullable();
             $table->string('auth_token')->nullable();
             $table->string('content_encoding')->nullable();

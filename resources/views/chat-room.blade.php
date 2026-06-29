@@ -58,13 +58,13 @@
                     </p>
                 </div>
 
-                <div id="chatBody"
-                    x-init="$nextTick(() => $el.scrollTop = $el.scrollHeight)"
+                <div id="chatBody" x-init="$nextTick(() => $el.scrollTop = $el.scrollHeight)"
                     x-effect="setTimeout(() => $el.scrollTop = $el.scrollHeight, 100)"
                     class="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-[#f0f2f5] dark:bg-gray-950">
 
                     @foreach ($this->getMessages() as $msg)
-                        <div wire:key="msg-{{ $msg->id }}" class="flex {{ $msg->direction == 'outbound' ? 'justify-end' : 'justify-start' }}">
+                        <div wire:key="msg-{{ $msg->id }}"
+                            class="flex {{ $msg->direction == 'outbound' ? 'justify-end' : 'justify-start' }}">
                             <div
                                 class="max-w-[80%] px-4 py-2 rounded-2xl text-sm shadow-sm
                                 {{ $msg->direction == 'outbound' ? 'bg-primary-600 text-white rounded-tr-none' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-none' }}">
@@ -90,7 +90,8 @@
                                 focus:ring-2 focus:ring-primary-500 focus:border-primary-500
                                 px-4 py-2 text-sm transition" />
 
-                        <button wire:click="sendMessage" class="bg-primary-600 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center">
+                        <button wire:click="sendMessage"
+                            class="bg-primary-600 text-white p-2 rounded-full w-10 h-10 flex items-center justify-center">
                             ➤
                         </button>
                     </div>
@@ -105,6 +106,82 @@
     </div>
 
     <script>
+        async function registerTelegramChatPush() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+                return;
+            }
+
+            // 1. Cek izin notifikasi terlebih dahulu
+            const permission = Notification.permission === 'default' ?
+                await Notification.requestPermission() :
+                Notification.permission;
+
+            if (permission !== 'granted') {
+                return;
+            }
+
+            // 2. Ambil VAPID Public Key dari backend Laravel
+            const keyResponse = await fetch(@js(route('webpush.public-key')));
+            const {
+                publicKey
+            } = await keyResponse.json();
+
+            if (!publicKey) {
+                console.warn('VAPID public key belum diset.');
+                return;
+            }
+
+            // 3. Daftarkan file Service Worker Anda
+            const registration = await navigator.serviceWorker.register('/webpush-sw.js');
+
+            // 4. PERBAIKAN UTAMA: Tunggu sampai Service Worker berstatus aktif dan siap!
+            const activeRegistration = await navigator.serviceWorker.ready;
+
+            // 5. Gunakan instans activeRegistration untuk mengecek dan mendaftarkan subskripsi
+            let subscription = await activeRegistration.pushManager.getSubscription();
+
+            if (!subscription) {
+                subscription = await activeRegistration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey),
+                });
+            }
+
+            const subscriptionData = subscription.toJSON();
+            subscriptionData.contentEncoding = (PushManager.supportedContentEncodings || ['aesgcm'])[0];
+
+            // 6. Kirim data subskripsi ke controller Laravel via route
+            await fetch(@js(route('webpush.subscribe')), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': @js(csrf_token()),
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(subscriptionData),
+            });
+        }
+
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+
+            return outputArray;
+        }
+
+        registerTelegramChatPush().catch((error) => {
+            console.warn('Gagal mengaktifkan web push:', error);
+        });
+
         function chatResize() {
             return {
                 leftWidth: 30, // Default dikecilin dikit biar area chat kanan lebih lega wak

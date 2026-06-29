@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lead;
 use App\Models\ChatMessage;
 use App\Models\User;
+use App\Notifications\TelegramChatWebPushNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -75,7 +76,7 @@ class TelegramController extends Controller
             $lead = Lead::where('telegram_chat_id', '=', $chatId)->first();
 
             if ($lead && $messageText !== '' && strpos($messageText, '/start') !== 0) {
-                ChatMessage::create([
+                $chatMessage = ChatMessage::create([
                     'lead_id' => $lead->id,
                     'message_text' => $messageText,
                     'direction' => 'inbound',
@@ -99,15 +100,55 @@ class TelegramController extends Controller
                             ->actions([
                                 \Filament\Notifications\Actions\Action::make('balas')
                                     ->button()
-                                    // Melempar rute notifikasi langsung ke Custom Page Chat Room di panel affiliate
-                                    ->url('/affiliate/chat-room')
+                                    ->url(route('filament.admin.pages.chat-room'))
                             ])
-                            ->sendToDatabase($affiliateOwner) // Masuk ke lonceng dashboard mahasiswa yang tepat
-                            ->broadcast($affiliateOwner); // Trigger Reverb Realtime
+                            ->sendToDatabase($affiliateOwner)
+                            ->broadcast($affiliateOwner);
+
+                        Log::info('BEFORE WEB PUSH', [
+                            'user_id' => $affiliateOwner->id,
+                            'subscriptions' => $affiliateOwner->pushSubscriptions()->count(),
+                        ]);
+
+                        $affiliateOwner->notify(
+                            new TelegramChatWebPushNotification(
+                                $lead,
+                                $chatMessage
+                            )
+                        );
+
+                        Log::info('AFTER WEB PUSH');
                     } catch (\Throwable $e) {
-                        Log::error('Notif error: ' . $e->getMessage());
+                        Log::error('WEB PUSH ERROR', [
+                            'message' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                            'trace' => $e->getTraceAsString(),
+                        ]);
                     }
                 }
+
+                // if ($affiliateOwner) {
+                //     try {
+                //         Notification::make()
+                //             ->title('Pesan Telegram Baru')
+                //             ->body("Pesan dari Camaba: " . $lead->lead_name)
+                //             ->icon('heroicon-o-chat-bubble-left-right')
+                //             ->iconColor('success')
+                //             ->actions([
+                //                 \Filament\Notifications\Actions\Action::make('balas')
+                //                     ->button()
+                //                     // Melempar rute notifikasi langsung ke Custom Page Chat Room di panel affiliate
+                //                     ->url(route('filament.admin.pages.chat-room'))
+                //             ])
+                //             ->sendToDatabase($affiliateOwner) // Masuk ke lonceng dashboard mahasiswa yang tepat
+                //             ->broadcast($affiliateOwner) // Trigger Reverb Realtime
+
+                //         $affiliateOwner->notify(new TelegramChatWebPushNotification($lead, $chatMessage));
+                //     } catch (\Throwable $e) {
+                //         Log::error('Notif error: ' . $e->getMessage());
+                //     }
+                // }
             }
 
             return response()->json(['status' => 'success']);
