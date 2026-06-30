@@ -24,6 +24,7 @@ class Lead extends Model
         'is_refund_case',
         'batch_number',
         'batch_year',
+        'payment_reminder_sent_at',
     ];
 
     /**

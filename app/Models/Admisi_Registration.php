@@ -8,7 +8,13 @@ class Admisi_Registration extends Model
 {
     protected $table = 'admisi__registrations';
 
+    // Primary key tabel ini adalah no_registrasi (bukan id)
+    protected $primaryKey = 'no_registrasi';
+    protected $keyType = 'string';
+    public $incrementing = false;
+
     protected $fillable = [
+        'no_registrasi',
         'nama_calon',
         'email',
         'no_hp',
@@ -16,6 +22,10 @@ class Admisi_Registration extends Model
         'current_step',
         'step_start_at',
         'last_update_at',
+        'total_tagihan',
+        'total_dibayar',
+        'batch_number',
+        'batch_year',
     ];
 
     public function refJurusan()

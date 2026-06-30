@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Admisi_Registration;
+use App\Observers\AdmisiRegistrationObserver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -32,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
         if (class_exists(\App\Policies\LeadPolicy::class)) {
             Gate::policy(\App\Models\Lead::class, \App\Policies\LeadPolicy::class);
         }
+
+        // Daftarkan Observer: Admisi_Registration
+        // Saat current_step berubah ke 4, otomatis dispatch job reminder pembayaran ke H-0
+        Admisi_Registration::observe(AdmisiRegistrationObserver::class);
     }
 
 
