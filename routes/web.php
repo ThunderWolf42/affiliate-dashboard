@@ -6,7 +6,7 @@ use App\Http\Controllers\WebPushSubscriptionController;
 
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/admin/login');
 });
 
 Route::get('/join/{affiliate_code}', [AffiliateJoinController::class, 'index'])->name('affiliate');// ini buat halaman join berdasarkan link affiliate
