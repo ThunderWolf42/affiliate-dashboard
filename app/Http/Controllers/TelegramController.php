@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Lead;
 use App\Models\ChatMessage;
 use App\Models\User;
-use App\Notifications\TelegramChatWebPushNotification;
+// use App\Notifications\TelegramChatWebPushNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
+use Google\Auth\Credentials\ServiceAccountCredentials;
 
 class TelegramController extends Controller
 {
@@ -105,19 +106,19 @@ class TelegramController extends Controller
                             ->sendToDatabase($affiliateOwner)
                             ->broadcast($affiliateOwner);
 
-                        Log::info('BEFORE WEB PUSH', [
+                        Log::info('BEFORE FCM', [
                             'user_id' => $affiliateOwner->id,
-                            'subscriptions' => $affiliateOwner->pushSubscriptions()->count(),
+                            'fcm_token_exists' => !empty($affiliateOwner->fcm_token),
                         ]);
 
-                        $affiliateOwner->notify(
-                            new TelegramChatWebPushNotification(
-                                $lead,
-                                $chatMessage
-                            )
+                        $this->sendFcmNotification(
+                            $affiliateOwner,
+                            $lead,
+                            $chatMessage
                         );
 
-                        Log::info('AFTER WEB PUSH');
+
+                        Log::info('AFTER FCM');
                     } catch (\Throwable $e) {
                         Log::error('WEB PUSH ERROR', [
                             'message' => $e->getMessage(),
@@ -163,37 +164,66 @@ class TelegramController extends Controller
         }
     }
 
-    private function sendReply($chatId, $message)
-    {
+    private function sendFcmNotification(
+        User $affiliateOwner,
+        Lead $lead,
+        ChatMessage $chatMessage = null
+    ) {
         try {
+            if (!$affiliateOwner->fcm_token) {
+                Log::warning('FCM TOKEN KOSONG', [
+                    'user_id' => $affiliateOwner->id,
+                ]);
 
-            // $token = config('services.telegram.bot_token') ?? env('TELEGRAM_BOT_TOKEN');
-            $token = config('services.telegram.bot_token');
-            // var_dump($token); die; // Debug token Telegram
-            if (!$token) {
-                Log::error('TELEGRAM TOKEN KOSONG');
                 return;
             }
 
-            $response = Http::withoutVerifying()->timeout(5)->post(
-                "https://api.telegram.org/bot{$token}/sendMessage",
-                [
-                    'chat_id' => $chatId,
-                    'text' => $message,
-                    'parse_mode' => 'Markdown'
-                ]
+            $credentials = new ServiceAccountCredentials(
+                ['https://www.googleapis.com/auth/firebase.messaging'],
+                storage_path('app/firebase-service-account.json')
             );
 
-            if (!$response->successful()) {
-                Log::error('GAGAL KIRIM TELEGRAM', [
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ]);
-            }
+            $accessToken =
+                $credentials->fetchAuthToken()['access_token'];
 
+            $response = Http::withToken($accessToken)
+                ->post(
+                    'https://fcm.googleapis.com/v1/projects/ukrida-affiliate-dashboard/messages:send',
+                    [
+                        'message' => [
+                            'token' => $affiliateOwner->fcm_token,
+
+                            'webpush' => [
+                                'notification' => [
+                                    'title' => 'Pesan Telegram Baru',
+                                    'body' => 'Pesan dari Camaba: ' . $lead->lead_name,
+                                    'icon' => asset('favicon.ico'),
+                                ],
+                                'fcm_options' => [
+                                    'link' => route('filament.admin.pages.chat-room'),
+                                ],
+                            ],
+
+                            'data' => [
+                                'url' => route('filament.admin.pages.chat-room'),
+                                'lead_id' => (string) $lead->id,
+                                'chat_message_id' => $chatMessage
+                                    ? (string) $chatMessage->id
+                                    : '',
+                            ],
+                        ],
+                    ]
+                );
+
+            Log::info('FCM RESPONSE', [
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
         } catch (\Throwable $e) {
-            Log::error('ERROR SEND TELEGRAM', [
-                'message' => $e->getMessage()
+            Log::error('FCM ERROR', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
             ]);
         }
     }

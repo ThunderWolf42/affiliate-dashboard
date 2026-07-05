@@ -1,5 +1,6 @@
 self.addEventListener("push", (event) => {
-    console.log("[Service Worker] Push Event diterima.");
+    console.log("[SW] PUSH EVENT MASUK");
+    console.log("[SW] event.data =", event.data);
 
     let payload = {
         title: "Notifikasi Baru",
@@ -13,27 +14,37 @@ self.addEventListener("push", (event) => {
 
     if (event.data) {
         try {
-            const rawData = event.data.json();
-            console.log("[Service Worker] Raw Data JSON:", rawData);
+            console.log("[SW] event.data.text():", event.data.text());
 
-            // Antisipasi jika Laravel membungkus JSON di dalam key "payload"
+            const rawData = event.data.json();
+            console.log("[SW] Raw Data JSON:", rawData);
+
             const extractedData = rawData.payload ? rawData.payload : rawData;
-            console.log("[Service Worker] Extracted Data (setelah filter):", extractedData);
+
+            console.log("[SW] Extracted Data:", extractedData);
 
             payload = {
                 ...payload,
                 ...extractedData,
             };
         } catch (e) {
-            console.warn("[Service Worker] Gagal parsing JSON, mencoba format teks biasa:", e);
-            payload.body = event.data.text();
+            console.warn("[SW] Gagal parsing:", e);
+
+            try {
+                payload.body = event.data.text();
+                console.log("[SW] Plain Text:", payload.body);
+            } catch (err) {
+                console.error("[SW] Bahkan text() gagal:", err);
+            }
         }
     } else {
-        console.warn("[Service Worker] Push event diterima tapi tidak ada data (event.data kosong).");
+        console.warn(
+            "[Service Worker] Push event diterima tapi tidak ada data (event.data kosong).",
+        );
     }
 
     console.log("[Service Worker] Menampilkan Notifikasi:", payload);
-
+    console.log("[SW] Payload akhir:", payload);
     event.waitUntil(
         self.registration.showNotification(payload.title, {
             body: payload.body,
@@ -42,7 +53,7 @@ self.addEventListener("push", (event) => {
             tag: payload.tag,
             data: payload.data,
             actions: payload.actions,
-        })
+        }),
     );
 });
 
@@ -65,21 +76,27 @@ self.addEventListener("notificationclick", (event) => {
                 includeUncontrolled: true,
             })
             .then((clientList) => {
-                console.log(`[Service Worker] Jumlah tab terbuka: ${clientList.length}`);
+                console.log(
+                    `[Service Worker] Jumlah tab terbuka: ${clientList.length}`,
+                );
 
                 for (const client of clientList) {
                     // Cek apakah ada tab yang URL-nya cocok
                     if (client.url === fullUrl && "focus" in client) {
-                        console.log("[Service Worker] Tab cocok ditemukan, memfokuskan tab...");
+                        console.log(
+                            "[Service Worker] Tab cocok ditemukan, memfokuskan tab...",
+                        );
                         return client.focus();
                     }
                 }
 
                 // Jika tidak ada tab yang cocok, buka tab baru
                 if (clients.openWindow) {
-                    console.log("[Service Worker] Tidak ada tab cocok, membuka jendela baru.");
+                    console.log(
+                        "[Service Worker] Tidak ada tab cocok, membuka jendela baru.",
+                    );
                     return clients.openWindow(fullUrl);
                 }
-            })
+            }),
     );
 });
