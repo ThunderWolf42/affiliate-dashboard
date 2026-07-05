@@ -5,6 +5,7 @@ use App\Http\Controllers\AffiliateJoinController;
 use App\Http\Controllers\WebPushSubscriptionController;
 
 
+
 Route::get('/', function () {
     return redirect('/admin/login');
 });
@@ -22,24 +23,28 @@ Route::middleware('auth')->group(function () {
         ->name('webpush.unsubscribe');
 });
 
-Route::get('/test-webpush', function () {
-    $user = \App\Models\User::find(1);
+Route::get(
+    '/test-webpush',
+    function () {
+        $user = \App\Models\User::find(1);
 
-    logger()->info([
-        'subs' => $user->pushSubscriptions()->count(),
-    ]);
+        logger()->info([
+            'subs' => $user->pushSubscriptions()->count(),
+        ]);
 
-    $user->notify(
-        new \App\Notifications\TelegramChatWebPushNotification(
-            \App\Models\Lead::first(),
-            \App\Models\ChatMessage::latest()->first()
-        )
-    );
+        $user->notify(
+            new \App\Notifications\TelegramChatWebPushNotification(
+                \App\Models\Lead::first(),
+                \App\Models\ChatMessage::latest()->first()
+            )
+        );
 
-    return 'sent';
-}
-
+        return 'sent';
+    }
 );
+
+
+
 
 
 
