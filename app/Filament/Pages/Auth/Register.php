@@ -103,7 +103,7 @@ class Register extends BaseRegister
                     'email' => $data['email'],
                     'password' => $data['password'],
                     'nim' => $nimFromEmail,
-                    'role' => 'affiliate', // Mengunci role agar otomatis jadi affiliate
+                    'role' => 'affiliate', 
                     'affiliate_code' => 'REF-' . strtoupper(Str::random(6)),
                 ]);
             }

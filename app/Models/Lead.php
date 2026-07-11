@@ -97,25 +97,15 @@ class Lead extends Model
                 }
             }
         }
-
-        // $currentStep = $admisi?->current_step;
-
-
-        // if ((int) $currentStep === 4) {
-
-        //     // Jagaan URGENT H-7: Jika di tahap 4 total bayar masih di bawah 20%
-        //     if ($persentase < 20) {
-        //         $urgent = true;
-        //     }
-
-        //     // Penentuan nasib status reward affiliator
-            if ($this->is_refund_case) {
-                $rewardStatus = $persentase >= 20 ? 'Sah (Cair - Refund Case)' : 'Hangus (Refund < 20%)';
-            } else {
-                $rewardStatus = $persentase >= 20 ? 'Sah (Bisa Cair)' : 'Menunggu Pelunasan (Min 20%)';
-            }
-        
-
+        if ($this->is_refund_case) {
+    $rewardStatus = $persentase >= 20
+        ? 'Sah (Cair - Refund Case)'
+        : 'Hangus (Refund < 20%)';
+} else {
+    $rewardStatus = $persentase >= 20
+        ? 'Sah (Bisa Cair)'
+        : 'Menunggu Pelunasan (Min 20%)';
+}
         return [
             'is_urgent' => $urgent,
             'reward_status' => $rewardStatus,

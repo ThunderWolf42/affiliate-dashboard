@@ -39,7 +39,7 @@ class AffiliateJoinController extends Controller
         // 2. Ambil username bot Telegram kamu dari file .env
         $botUsername = env('TELEGRAM_BOT_USERNAME', 'DutaUkrida_bot');
 
-        // 3. GAS POL REDIRECT KE TELEGRAM BAWA ID LEAD!
+        // 3.REDIRECT KE TELEGRAM BAWA ID LEAD!
         // Hasilnya dinamis: https://t.me/{$botUsername}?start={$lead->id}
         return redirect()->away("https://t.me/{$botUsername}?start={$lead->id}");
     }

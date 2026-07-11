@@ -38,7 +38,7 @@ class AdmisiRegistrasiSeeder extends Seeder
                 'current_step' => 1,
                 'total_tagihan' => 20000000.00,
                 'total_dibayar' => 0.00,
-                'step_start_at' => now()->subDays(1),
+                'step_start_at' => now(),
                 'batch_number' => 1,
                 'batch_year' => 2026,
                 'last_update_at' => now(),

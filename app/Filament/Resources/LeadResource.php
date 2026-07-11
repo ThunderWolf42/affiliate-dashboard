@@ -100,17 +100,7 @@ class LeadResource extends Resource
                         $record->status_sgs['persen']
                     ),
 
-                // Tables\Columns\TextColumn::make('status_sgs')
-                //     ->label('Deg')
-                //     ->getStateUsing(function ($record) {
 
-                //         return json_encode([
-                //             'tagihan' => $record->admisiRegistration?->total_tagihan,
-                //             'dibayar' => $record->admisiRegistration?->total_dibayar,
-                //             'persen' => $record->status_sgs['persen'],
-                //             'urgent' => $record->status_sgs['is_urgent'],
-                //         ]);
-                //     }),
 
                 Tables\Columns\TextColumn::make('countdown_h7')
                     ->label('Deadline')
@@ -151,27 +141,6 @@ class LeadResource extends Resource
                         return "H-{$sisaHari}";
                     })
 
-                    //     $deadline = $tglMulaiTahap
-                    //         ->copy()
-                    //         ->addDays($batasHari);
-
-                    //     if (now()->greaterThan($deadline)) {
-
-                    //         $telatHari =
-                    //             now()->diffInDays($deadline);
-
-                    //         return "Lewat {$telatHari}H";
-                    //     }
-
-                    //     $sisaHari =
-                    //         now()->diffInDays($deadline, false);
-
-                    //     if ($sisaHari == 0) {
-                    //         return 'Hari Ini';
-                    //     }
-
-                    //     return "H-{$sisaHari}";
-                    // })
                     ->color(fn($state) => match (true) {
                         str_contains($state, 'Lewat') => 'danger',
                         str_contains($state, 'Hari Ini') => 'warning',
@@ -288,14 +257,4 @@ class LeadResource extends Resource
         // Admin dan Affiliate sama-sama berhak melihat menu data Leads ini
         return in_array(auth()->user()?->role, ['admin', 'affiliate']);
     }
-
-    // public static function canEdit($record): bool
-    // {
-    //     return auth()->user()?->role === 'admin';
-    // }
-    // public static function canCreate(): bool
-    // {
-    //     return auth()->user()?->role === 'admin';
-    // }
-
 }

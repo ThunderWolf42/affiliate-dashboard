@@ -33,22 +33,22 @@ class TelegramController extends Controller
             | 1. HANDLE HANDSHAKE AUTOMATICALLY VIA /start
             |--------------------------------------------------------------------------
             | Calon mahasiswa klik link affiliate -> masuk Telegram -> klik tombol Start.
-            | Telegram mengirim teks: "/start 14" (14 adalah ID Lead)
+
             */
             if (strpos($messageText, '/start') === 0) {
                 $parts = explode(' ', $messageText);
-                $leadId = $parts[1] ?? null; // Menangkap ID Lead dari database simulasi
+                $leadId = $parts[1] ?? null; // Menangkap ID Lead
 
                 if ($leadId) {
                     $lead = Lead::find($leadId);
 
                     if ($lead) {
-                        // Jalankan proses update jabat tangan (Handshake)
+                        // Jalankan proses  (Handshake)
                         $lead->update([
                             'telegram_chat_id' => $chatId
                         ]);
 
-                        // 📝 EDIT KATA-KATA BALASAN BOT TELEGRAM DI SINI WAK:
+                        //  EDIT KATA-KATA BALASAN BOT TELEGRAM:
                         $welcomeMessage = "Halo *{$lead->lead_name}*! Selamat datang di Pusat Informasi & Admisi UKRIDA ✨\n\n" .
                             "Senang sekali bisa terhubung dengan kamu. Akun Telegram kamu saat ini sudah *resmi terverifikasi* di sistem kami.\n\n" .
                             "Untuk melanjutkan pengisian berkas dan simulasi pendaftaran kuliah, silakan langsung klik tautan resmi di bawah ini ya:\n" .
@@ -88,7 +88,7 @@ class TelegramController extends Controller
                 | 3. NOTIFIKASI REALTIME HANYA KE MAHASISWA PEMILIK LEAD TERSEBUT
                 |--------------------------------------------------------------------------
                 */
-                // 🔒 AMAN & PRIVAT: Ambil user pemilik (affiliate) dari relasi data Lead secara dinamis
+                // Ambil user pemilik (affiliate) dari relasi data Lead secara dinamis
                 $affiliateOwner = $lead->user;
 
                 if ($affiliateOwner) {
@@ -129,27 +129,6 @@ class TelegramController extends Controller
                     }
                 }
 
-                // if ($affiliateOwner) {
-                //     try {
-                //         Notification::make()
-                //             ->title('Pesan Telegram Baru')
-                //             ->body("Pesan dari Camaba: " . $lead->lead_name)
-                //             ->icon('heroicon-o-chat-bubble-left-right')
-                //             ->iconColor('success')
-                //             ->actions([
-                //                 \Filament\Notifications\Actions\Action::make('balas')
-                //                     ->button()
-                //                     // Melempar rute notifikasi langsung ke Custom Page Chat Room di panel affiliate
-                //                     ->url(route('filament.admin.pages.chat-room'))
-                //             ])
-                //             ->sendToDatabase($affiliateOwner) // Masuk ke lonceng dashboard mahasiswa yang tepat
-                //             ->broadcast($affiliateOwner) // Trigger Reverb Realtime
-
-                //         $affiliateOwner->notify(new TelegramChatWebPushNotification($lead, $chatMessage));
-                //     } catch (\Throwable $e) {
-                //         Log::error('Notif error: ' . $e->getMessage());
-                //     }
-                // }
             }
 
             return response()->json(['status' => 'success']);
@@ -161,6 +140,40 @@ class TelegramController extends Controller
             ]);
 
             return response()->json(['error' => true], 200);
+        }
+    }
+
+   
+
+    private function sendReply($chatId, $message)
+    {
+        try {
+            $token = config('services.telegram.bot_token');
+
+            if (!$token) {
+                Log::error('TELEGRAM TOKEN KOSONG');
+                return;
+            }
+
+            $response = Http::timeout(5)->post(
+                "https://api.telegram.org/bot{$token}/sendMessage",
+                [
+                    'chat_id' => $chatId,
+                    'text' => $message,
+                    'parse_mode' => 'Markdown',
+                ]
+            );
+
+            if (!$response->successful()) {
+                Log::error('GAGAL KIRIM TELEGRAM', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('ERROR SEND TELEGRAM', [
+                'message' => $e->getMessage(),
+            ]);
         }
     }
 

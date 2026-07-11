@@ -13,4 +13,4 @@ Artisan::command('inspire', function () {
 // Reminder sekarang dikirim secara event-driven via AdmisiRegistrationObserver
 // yang men-dispatch SendPaymentReminderJob tepat saat H-0 deadline pembayaran.
 // Untuk test manual, gunakan: php artisan reminders:send
-
+Schedule::command('reminders:send')->everyMinute();
