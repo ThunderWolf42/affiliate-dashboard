@@ -20,8 +20,8 @@ class AffiliateStats extends BaseWidget
             $totalLeadsGlobal = Lead::count();
             $totalMatchGlobal = Lead::whereNotNull('no_registrasi')->count();
 
-            // 🎯 HITUNG REWARD GLOBAL DINAMIS BERDASARKAN REWARD JURUSAN
-            // Menggunakan eager loading 'jurusan' agar query tetap ringan (mencegah N+1 Issue)
+
+            //  HITUNG REWARD GLOBAL DINAMIS BERDASARKAN REWARD JURUSAN
             $allLeads = Lead::with('jurusan')->get();
             $totalRewardGlobal = 0;
 

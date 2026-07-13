@@ -12,7 +12,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        // 🔒 Hanya Admin Marketing (SP) yang bisa melihat menu manajemen User/Affiliate ini
+        //  Hanya Admin Marketing (SP) yang bisa liat semua nya 
         return $user->role === 'admin';
     }
 

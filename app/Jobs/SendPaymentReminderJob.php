@@ -32,7 +32,8 @@ class SendPaymentReminderJob implements ShouldQueue
     public function __construct(
         public readonly int $leadId,
         public readonly string $stepStartAt,
-    ) {}
+    ) {
+    }
 
     /**
      * Execute the job.
@@ -77,8 +78,10 @@ class SendPaymentReminderJob implements ShouldQueue
         }
 
         // Cek apakah reminder sudah pernah dikirim untuk step_start_at ini
-        if ($lead->payment_reminder_sent_at &&
-            Carbon::parse($lead->payment_reminder_sent_at)->greaterThanOrEqualTo(Carbon::parse($admisi->step_start_at))) {
+        if (
+            $lead->payment_reminder_sent_at &&
+            Carbon::parse($lead->payment_reminder_sent_at)->greaterThanOrEqualTo(Carbon::parse($admisi->step_start_at))
+        ) {
             Log::info("SendPaymentReminderJob: Reminder untuk Lead {$lead->lead_name} sudah dikirim sebelumnya. Lewati.");
             return;
         }
@@ -99,14 +102,14 @@ class SendPaymentReminderJob implements ShouldQueue
                 $token = config('services.telegram.bot_token') ?? env('TELEGRAM_BOT_TOKEN');
                 $messageText = "Halo *{$lead->lead_name}*! 👋\n\n" .
                     "Hari ini adalah batas waktu (deadline) pembayaran biaya pendaftaran & kuliah kamu di UKRIDA dengan nomor registrasi *{$lead->no_registrasi}*.\n\n" .
-                    "Mohon segera melakukan pembayaran dan konfirmasi melalui sistem pendaftaran agar status pendaftaranmu tetap aktif dan tidak hangus.\n\n" .
+                    "Mohon segera melakukan pembayaran 🙏.\n\n" .
                     "Untuk melakukan pembayaran, silakan akses:\n" .
                     "👉 [Sistem Pendaftaran UKRIDA](https://register.ukrida.ac.id/admisi/public/register/register/registerEmail)\n\n" .
                     "Jika kamu sudah melakukan pembayaran, mohon abaikan pesan ini. Terima kasih! ✨";
 
                 $response = Http::withoutVerifying()->post("https://api.telegram.org/bot{$token}/sendMessage", [
-                    'chat_id'    => $lead->telegram_chat_id,
-                    'text'       => $messageText,
+                    'chat_id' => $lead->telegram_chat_id,
+                    'text' => $messageText,
                     'parse_mode' => 'Markdown',
                 ]);
 
@@ -114,9 +117,9 @@ class SendPaymentReminderJob implements ShouldQueue
                     Log::info("SendPaymentReminderJob: Telegram terkirim ke chat ID {$lead->telegram_chat_id}");
 
                     ChatMessage::create([
-                        'lead_id'      => $lead->id,
+                        'lead_id' => $lead->id,
                         'message_text' => $messageText,
-                        'direction'    => 'outbound',
+                        'direction' => 'outbound',
                     ]);
                 } else {
                     Log::error("SendPaymentReminderJob: Gagal kirim Telegram ke {$lead->telegram_chat_id}: " . $response->body());

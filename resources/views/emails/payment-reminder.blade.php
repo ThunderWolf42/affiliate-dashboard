@@ -126,7 +126,7 @@
             <p>Kami ingin menginformasikan bahwa pendaftaran Anda di UKRIDA telah mencapai batas waktu (deadline) pembayaran biaya pendaftaran & kuliah pada hari ini.</p>
             
             <div class="warning-text">
-                PENTING: Mohon lakukan pembayaran hari ini agar status pendaftaran Anda tetap aktif dan tidak hangus secara otomatis oleh sistem.
+                PENTING:Mohon segera melakukan pembayaran 🙏.
             </div>
 
             <div class="details-box">
